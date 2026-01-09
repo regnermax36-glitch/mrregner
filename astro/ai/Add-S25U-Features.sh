@@ -118,7 +118,7 @@ ADD_FROM_FW "extra" "system" "lib64/libmediacontextanalyzer.so"
 local feature_xml="$WORKSPACE/system/system/etc/floating_feature.xml"
 
 # TODO : a way for check device has NPU or not. Usually flagship device have NPU related props in the xml.
-# We use this method until a new way found. For example : dm3q
+# We use this method until a new way found. For example : b5q
 if grep -q "NPU" "$feature_xml"; then
 FF "MMFW_CONFIG_MEDIA_CONTEXT_ANALYZER_CORE" "NPU"
 else
@@ -136,8 +136,8 @@ ADD_FROM_FW "extra" "system" "priv-app/SemanticSearchCore/SemanticSearchCore.apk
 # FF "MMFW_SUPPORT_PHOTOHDR" "TRUE"
 # and other HDR* related lines
 
-# S23 Ultra have same HFR modes and features S25U have
-if [ "$CODENAME" = "dm3q" ]; then
+# Z Flip5 have same HFR modes and features S25U have
+if [ "$CODENAME" = "b5q" ]; then
     ADD_FROM_FW "extra" "system" "priv-app/SecSettings"
     ADD_FROM_FW "extra" "system" "priv-app/SettingsProvider"
 fi
