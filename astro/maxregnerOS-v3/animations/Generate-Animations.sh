@@ -163,4 +163,15 @@ EOF
 BPROP "system" "ro.maxregneros.v3.animations.path" "/system/media/animations/maxregnerOS-v3"
 BPROP "system" "ro.maxregneros.v3.animations.count" "15"
 
+# Verify files were created
+ANIM_COUNT=$(find "$ANIM_DIR" -type f -name "*.xml" 2>/dev/null | wc -l)
+if [ "$ANIM_COUNT" -gt 0 ]; then
+    LOG_INFO "Successfully created $ANIM_COUNT animation files"
+    LOG_INFO "Animations location: $ANIM_DIR"
+else
+    LOG_WARN "No animation files were created!"
+    # Create a placeholder to ensure directory exists
+    touch "$ANIM_DIR/.placeholder"
+fi
+
 LOG_END "Animations generated"

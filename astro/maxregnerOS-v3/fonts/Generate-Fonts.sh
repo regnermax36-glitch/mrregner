@@ -81,4 +81,14 @@ if [ -f "$FONTS_CONFIG" ]; then
     LOG_INFO "Font configuration will be updated"
 fi
 
+# Verify files were created
+FONT_COUNT=$(find "$FONT_DIR" -name "*maxregneros*" -o -name "*maxregnerOS*" -type f 2>/dev/null | wc -l)
+if [ "$FONT_COUNT" -gt 0 ]; then
+    LOG_INFO "Successfully created $FONT_COUNT font files"
+    LOG_INFO "Fonts location: $FONT_DIR"
+else
+    LOG_WARN "No font files were created (this is OK if no source fonts provided)"
+    LOG_INFO "Font configuration created at: $WORKSPACE/system/system/etc/fonts_maxregneros.xml"
+fi
+
 LOG_END "Fonts installed"

@@ -307,4 +307,20 @@ EOF
 # Cleanup extraction directory
 rm -rf "$EXTRACT_DIR"
 
+# Verify files were created
+ICON_COUNT=$(find "$REDESIGN_DIR" -type f -name "*.png" 2>/dev/null | wc -l)
+if [ "$ICON_COUNT" -gt 0 ]; then
+    LOG_INFO "Successfully created $ICON_COUNT icon files"
+    LOG_INFO "Icons location: $REDESIGN_DIR"
+else
+    LOG_WARN "No icon files were created!"
+    LOG_WARN "This may be because:"
+    LOG_WARN "  1. APKs not found in workspace"
+    LOG_WARN "  2. Icon extraction failed"
+    LOG_WARN "  3. ImageMagick conversion failed"
+    # Create a placeholder to ensure directory exists
+    mkdir -p "$REDESIGN_DIR/system"
+    touch "$REDESIGN_DIR/system/.placeholder"
+fi
+
 LOG_END "Icons extracted, redesigned, and installed"
