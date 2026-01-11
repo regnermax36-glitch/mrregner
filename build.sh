@@ -132,11 +132,16 @@ for layer in "${layers[@]}"; do
         [[ "$sh" == *"$device.sh" ]] && continue
         # Skip Magisk module scripts (they're for installation, not build)
         [[ "$sh" == */magisk/* ]] && continue
+        # Skip maxregnerOS build scripts (they're for module building, not ROM building)
+        [[ "$sh" == */maxregnerOS/*/build.sh ]] && continue
+        [[ "$sh" == */mrregner/build.sh ]] && continue
         EXEC_SCRIPT "$sh" "$MARKER_FILE"
     done < <(find "$layer" -type f -name "*.sh" \
         ! -path "*.apk/*" \
         ! -path "*.jar/*" \
         ! -path "*/magisk/*" \
+        ! -path "*/maxregnerOS/*/build.sh" \
+        ! -path "*/mrregner/build.sh" \
         -print0 | sort -z)
 
     
