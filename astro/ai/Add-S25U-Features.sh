@@ -144,8 +144,8 @@ fi
     ADD_FROM_FW "extra" "system" "priv-app/SecSettingsIntelligence.apk"
 
 # Set props
-BPROP "system" "ro.product.system.model" "SM-S938B"
-BPROP "product" "ro.product.product.model" "SM-S938B"
+BPROP "system" "ro.product.system.model" "SM-S938U"
+BPROP "product" "ro.product.product.model" "SM-S938U"
 # This fixes some apps that need exact device props to function like Expert raw
 # https://github.com/salvogiangri/UN1CA/commit/e18fb23cf459ae160187b614b6bde0938717b6ef
 BPROP "product" "ro.product.product.name" "$CODENAME"
