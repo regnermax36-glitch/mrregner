@@ -169,7 +169,7 @@ add_apk_if_exists() {
 SYSTEM_APKS=()
 
 # Search for common system APKs in priv-app
-for apk_path in "$WORKSPACE/system/system/priv-app"/*/*.apk "$WORKSPACE/system/system/priv-app"/*.apk 2>/dev/null; do
+while IFS= read -r apk_path; do
     [ ! -f "$apk_path" ] && continue
     apk_name=$(basename "$apk_path" .apk)
     case "$apk_name" in
@@ -182,10 +182,10 @@ for apk_path in "$WORKSPACE/system/system/priv-app"/*/*.apk "$WORKSPACE/system/s
         SecCamera*) add_apk_if_exists "$apk_path" "camera" ;;
         SecGallery*) add_apk_if_exists "$apk_path" "gallery" ;;
     esac
-done
+done < <(find "$WORKSPACE/system/system/priv-app" -name "*.apk" -type f 2>/dev/null)
 
 # Search for common system APKs in app
-for apk_path in "$WORKSPACE/system/system/app"/*/*.apk "$WORKSPACE/system/system/app"/*.apk 2>/dev/null; do
+while IFS= read -r apk_path; do
     [ ! -f "$apk_path" ] && continue
     apk_name=$(basename "$apk_path" .apk)
     case "$apk_name" in
@@ -197,7 +197,7 @@ for apk_path in "$WORKSPACE/system/system/app"/*/*.apk "$WORKSPACE/system/system
         "SBrowser"|"Browser") add_apk_if_exists "$apk_path" "browser" ;;
         "MyFiles"|"FileManager") add_apk_if_exists "$apk_path" "files" ;;
     esac
-done
+done < <(find "$WORKSPACE/system/system/app" -name "*.apk" -type f 2>/dev/null)
 
 # Fallback to hardcoded list if dynamic search finds nothing
 if [ ${#SYSTEM_APKS[@]} -eq 0 ]; then

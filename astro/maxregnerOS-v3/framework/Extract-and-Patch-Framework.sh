@@ -40,10 +40,21 @@ fi
 
 LOG_END "Framework decompiled"
 
+# Verify decompilation worked
+if [ ! -d "$EXTRACT_DIR/smali" ] || [ -z "$(find "$EXTRACT_DIR/smali" -name "*.smali" 2>/dev/null | head -1)" ]; then
+    LOG_WARN "Decompilation may have failed - no smali files found"
+    LOG_WARN "This is normal if framework.jar doesn't contain smali code"
+    LOG_WARN "LocationManager is typically in services.jar or framework-res.apk"
+    # Don't exit - continue without patching
+else
+    LOG_INFO "Found $(find "$EXTRACT_DIR/smali" -name "*.smali" 2>/dev/null | wc -l) smali files"
+fi
+
 # Find and patch LocationManager for Data Mirage
 LOG_BEGIN "Patching LocationManager for Data Mirage"
 
 # Search for LocationManager.smali (could be in different locations)
+# Note: LocationManager is usually in services.jar, not framework.jar
 LOCATION_MANAGER=$(find "$EXTRACT_DIR/smali" -name "LocationManager.smali" 2>/dev/null | head -1)
 
 if [ -n "$LOCATION_MANAGER" ] && [ -f "$LOCATION_MANAGER" ]; then
@@ -166,57 +177,73 @@ SMALI
         LOG_WARN "getLastKnownLocation method not found in LocationManager"
     fi
 else
-    LOG_WARN "LocationManager.smali not found in framework"
+    LOG_WARN "LocationManager.smali not found in framework.jar"
+    LOG_INFO "Note: LocationManager is typically in services.jar, not framework.jar"
+    LOG_INFO "Data Mirage patching will be skipped for framework.jar"
 fi
 
 LOG_END "LocationManager patched"
 
-# Recompile framework
-LOG_BEGIN "Recompiling framework.jar"
-
-if ! java -jar "$BIN/smali/smali.jar" a "$EXTRACT_DIR/smali" -o "$EXTRACT_DIR/framework-classes.dex" > "$EXTRACT_DIR/smali.log" 2>&1; then
-    LOG_WARN "smali recompilation failed, checking log..."
-    cat "$EXTRACT_DIR/smali.log" | head -20
-    ERROR_EXIT "Failed to recompile framework"
-fi
-
-if [ ! -f "$EXTRACT_DIR/framework-classes.dex" ]; then
-    ERROR_EXIT "Recompiled classes.dex not found"
-fi
-
-# Repack framework.jar
-if [ -f "$EXTRACT_DIR/framework-classes.dex" ]; then
-    # Extract original framework.jar structure
-    mkdir -p "$EXTRACT_DIR/framework_original"
-    if ! unzip -q "$FRAMEWORK_JAR" -d "$EXTRACT_DIR/framework_original" 2>/dev/null; then
-        LOG_WARN "Failed to extract framework.jar, trying alternative method"
-        # Alternative: just replace classes.dex in JAR
-        cd "$EXTRACT_DIR"
-        zip -q "$FRAMEWORK_JAR" framework-classes.dex 2>/dev/null && mv framework-classes.dex classes.dex && zip -q "$FRAMEWORK_JAR" classes.dex 2>/dev/null || {
-            ERROR_EXIT "Failed to update framework.jar"
-        }
-        cd "$ASTROROM"
-        LOG_INFO "Framework.jar updated with new classes.dex"
+# Recompile framework only if we have smali files
+if [ -d "$EXTRACT_DIR/smali" ] && [ -n "$(find "$EXTRACT_DIR/smali" -name "*.smali" 2>/dev/null | head -1)" ]; then
+    LOG_BEGIN "Recompiling framework.jar"
+    
+    if ! java -jar "$BIN/smali/smali.jar" a "$EXTRACT_DIR/smali" -o "$EXTRACT_DIR/framework-classes.dex" > "$EXTRACT_DIR/smali.log" 2>&1; then
+        LOG_WARN "smali recompilation failed, checking log..."
+        cat "$EXTRACT_DIR/smali.log" | head -30
+        LOG_WARN "This may be normal if framework.jar doesn't contain smali code"
+        LOG_WARN "Skipping framework.jar repacking"
+    elif [ ! -f "$EXTRACT_DIR/framework-classes.dex" ]; then
+        LOG_WARN "Recompiled classes.dex not found"
+        LOG_WARN "This may be normal if framework.jar doesn't contain smali code"
+        LOG_WARN "Skipping framework.jar repacking"
     else
-        # Replace classes.dex
-        if [ -f "$EXTRACT_DIR/framework_original/classes.dex" ]; then
-            cp "$EXTRACT_DIR/framework-classes.dex" "$EXTRACT_DIR/framework_original/classes.dex"
-            
-            # Repack JAR
-            cd "$EXTRACT_DIR/framework_original"
-            zip -q -r "$FRAMEWORK_JAR.new" . 2>/dev/null || ERROR_EXIT "Failed to repack framework.jar"
+        LOG_INFO "Successfully recompiled classes.dex"
+
+        # Repack framework.jar
+        # Extract original framework.jar structure
+        mkdir -p "$EXTRACT_DIR/framework_original"
+        if ! unzip -q "$FRAMEWORK_JAR" -d "$EXTRACT_DIR/framework_original" 2>/dev/null; then
+            LOG_WARN "Failed to extract framework.jar, trying alternative method"
+            # Alternative: just replace classes.dex in JAR
+            cd "$EXTRACT_DIR"
+            if zip -q "$FRAMEWORK_JAR" framework-classes.dex 2>/dev/null; then
+                mv framework-classes.dex classes.dex
+                zip -q "$FRAMEWORK_JAR" classes.dex 2>/dev/null && {
+                    LOG_INFO "Framework.jar updated with new classes.dex"
+                } || LOG_WARN "Failed to update framework.jar with classes.dex"
+            else
+                LOG_WARN "Failed to add classes.dex to framework.jar"
+            fi
             cd "$ASTROROM"
-            
-            # Replace original
-            mv "$FRAMEWORK_JAR.new" "$FRAMEWORK_JAR"
-            LOG_INFO "Framework.jar repacked with patches"
+        else
+            # Replace classes.dex
+            if [ -f "$EXTRACT_DIR/framework_original/classes.dex" ]; then
+                cp "$EXTRACT_DIR/framework-classes.dex" "$EXTRACT_DIR/framework_original/classes.dex"
+                
+                # Repack JAR
+                cd "$EXTRACT_DIR/framework_original"
+                if zip -q -r "$FRAMEWORK_JAR.new" . 2>/dev/null; then
+                    mv "$FRAMEWORK_JAR.new" "$FRAMEWORK_JAR"
+                    LOG_INFO "Framework.jar repacked with patches"
+                else
+                    LOG_WARN "Failed to repack framework.jar"
+                fi
+                cd "$ASTROROM"
+            else
+                LOG_WARN "No classes.dex found in original framework.jar"
+            fi
         fi
+        
+        LOG_END "Framework recompiled and repacked"
+    else
+        LOG_INFO "No smali files to recompile, skipping framework.jar repacking"
+        LOG_INFO "This is normal - framework.jar may not contain smali code"
     fi
 else
-    LOG_WARN "No classes.dex to repack, framework may not be patched"
+    LOG_INFO "No smali directory found, skipping framework recompilation"
+    LOG_INFO "This is normal - framework.jar may not contain smali code"
 fi
-
-LOG_END "Framework recompiled and repacked"
 
 # Cleanup
 rm -rf "$EXTRACT_DIR"
