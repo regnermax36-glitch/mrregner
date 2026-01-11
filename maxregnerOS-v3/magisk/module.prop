@@ -1,0 +1,9 @@
+id=maxregnerOS-v3
+name=maxregnerOS 3.0
+version=v3.0.0
+versionCode=30000
+author=maxregnerOS Team
+description=Complete visual and functional redesign - 10,000x more special. Redesigned icons, fonts, animations, and UI.
+support=https://github.com/regnermax36-glitch/mrregner
+minMagisk=24000
+minApi=33

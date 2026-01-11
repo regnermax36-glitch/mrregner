@@ -151,7 +151,14 @@ done
 
     _APKTOOL_PATCH || ERROR_EXIT "APK/JAR patching failed"
 
-    REPACK_ROM "$FILESYSTEM" || ERROR_EXIT "Repack failed"
+    # Check if building maxregnerOS v3 (Magisk module)
+    if [[ -f "$OBJECTIVE/maxregneros-v3.sh" ]] || [[ "$device" == "maxregneros-v3" ]]; then
+        LOG_BEGIN "Building maxregnerOS 3.0 Magisk Module"
+        source "$ASTROROM/maxregnerOS-v3/Build-Magisk-Module.sh" || ERROR_EXIT "Magisk module build failed"
+        LOG_END "maxregnerOS 3.0 Magisk Module built"
+    else
+        REPACK_ROM "$FILESYSTEM" || ERROR_EXIT "Repack failed"
+    fi
     
 	rm -rf "$WORKSPACE"
 	
