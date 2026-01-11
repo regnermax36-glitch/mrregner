@@ -156,23 +156,72 @@ redesign_icon() {
 # Extract and redesign system icons
 LOG_BEGIN "Extracting system icons"
 
-SYSTEM_APKS=(
-    "$WORKSPACE/system/system/priv-app/SecSettings/SecSettings.apk:settings"
-    "$WORKSPACE/system/system/priv-app/SystemUI/SystemUI.apk:systemui"
-    "$WORKSPACE/system/system/priv-app/Launcher3/Launcher3.apk:launcher"
-    "$WORKSPACE/system/system/priv-app/SecTelephonyProvider/SecTelephonyProvider.apk:phone"
-    "$WORKSPACE/system/system/priv-app/Contacts/Contacts.apk:contacts"
-    "$WORKSPACE/system/system/priv-app/MmsService/MmsService.apk:messages"
-    "$WORKSPACE/system/system/priv-app/SecCamera4/SecCamera4.apk:camera"
-    "$WORKSPACE/system/system/priv-app/SecGallery2019/SecGallery2019.apk:gallery"
-    "$WORKSPACE/system/system/app/MusicPlayer/MusicPlayer.apk:music"
-    "$WORKSPACE/system/system/app/Calculator/Calculator.apk:calculator"
-    "$WORKSPACE/system/system/app/ClockPackage/ClockPackage.apk:clock"
-    "$WORKSPACE/system/system/app/Calendar/Calendar.apk:calendar"
-    "$WORKSPACE/system/system/app/Email/Email.apk:email"
-    "$WORKSPACE/system/system/app/SBrowser/SBrowser.apk:browser"
-    "$WORKSPACE/system/system/app/MyFiles/MyFiles.apk:files"
-)
+# Function to add APK if found
+add_apk_if_exists() {
+    local apk_path="$1"
+    local icon_name="$2"
+    if [ -f "$apk_path" ]; then
+        SYSTEM_APKS+=("$apk_path:$icon_name")
+    fi
+}
+
+# Find APKs dynamically
+SYSTEM_APKS=()
+
+# Search for common system APKs in priv-app
+for apk_path in "$WORKSPACE/system/system/priv-app"/*/*.apk "$WORKSPACE/system/system/priv-app"/*.apk 2>/dev/null; do
+    [ ! -f "$apk_path" ] && continue
+    apk_name=$(basename "$apk_path" .apk)
+    case "$apk_name" in
+        "SecSettings") add_apk_if_exists "$apk_path" "settings" ;;
+        "SystemUI") add_apk_if_exists "$apk_path" "systemui" ;;
+        "Launcher3"|"TouchWizHome"|"OneUIHome") add_apk_if_exists "$apk_path" "launcher" ;;
+        "SecTelephonyProvider"|"TeleService") add_apk_if_exists "$apk_path" "phone" ;;
+        "Contacts"|"ContactsProvider") add_apk_if_exists "$apk_path" "contacts" ;;
+        "MmsService"|"Messaging") add_apk_if_exists "$apk_path" "messages" ;;
+        SecCamera*) add_apk_if_exists "$apk_path" "camera" ;;
+        SecGallery*) add_apk_if_exists "$apk_path" "gallery" ;;
+    esac
+done
+
+# Search for common system APKs in app
+for apk_path in "$WORKSPACE/system/system/app"/*/*.apk "$WORKSPACE/system/system/app"/*.apk 2>/dev/null; do
+    [ ! -f "$apk_path" ] && continue
+    apk_name=$(basename "$apk_path" .apk)
+    case "$apk_name" in
+        "MusicPlayer"|"Music") add_apk_if_exists "$apk_path" "music" ;;
+        "Calculator"|"PopupCalculator") add_apk_if_exists "$apk_path" "calculator" ;;
+        "ClockPackage"|"DeskClock") add_apk_if_exists "$apk_path" "clock" ;;
+        "Calendar") add_apk_if_exists "$apk_path" "calendar" ;;
+        "Email") add_apk_if_exists "$apk_path" "email" ;;
+        "SBrowser"|"Browser") add_apk_if_exists "$apk_path" "browser" ;;
+        "MyFiles"|"FileManager") add_apk_if_exists "$apk_path" "files" ;;
+    esac
+done
+
+# Fallback to hardcoded list if dynamic search finds nothing
+if [ ${#SYSTEM_APKS[@]} -eq 0 ]; then
+    LOG_INFO "No APKs found dynamically, using hardcoded paths"
+    SYSTEM_APKS=(
+        "$WORKSPACE/system/system/priv-app/SecSettings/SecSettings.apk:settings"
+        "$WORKSPACE/system/system/priv-app/SystemUI/SystemUI.apk:systemui"
+        "$WORKSPACE/system/system/priv-app/Launcher3/Launcher3.apk:launcher"
+        "$WORKSPACE/system/system/priv-app/SecTelephonyProvider/SecTelephonyProvider.apk:phone"
+        "$WORKSPACE/system/system/priv-app/Contacts/Contacts.apk:contacts"
+        "$WORKSPACE/system/system/priv-app/MmsService/MmsService.apk:messages"
+        "$WORKSPACE/system/system/priv-app/SecCamera4/SecCamera4.apk:camera"
+        "$WORKSPACE/system/system/priv-app/SecGallery2019/SecGallery2019.apk:gallery"
+        "$WORKSPACE/system/system/app/MusicPlayer/MusicPlayer.apk:music"
+        "$WORKSPACE/system/system/app/Calculator/Calculator.apk:calculator"
+        "$WORKSPACE/system/system/app/ClockPackage/ClockPackage.apk:clock"
+        "$WORKSPACE/system/system/app/Calendar/Calendar.apk:calendar"
+        "$WORKSPACE/system/system/app/Email/Email.apk:email"
+        "$WORKSPACE/system/system/app/SBrowser/SBrowser.apk:browser"
+        "$WORKSPACE/system/system/app/MyFiles/MyFiles.apk:files"
+    )
+else
+    LOG_INFO "Found ${#SYSTEM_APKS[@]} APKs dynamically"
+fi
 
 for apk_info in "${SYSTEM_APKS[@]}"; do
     IFS=':' read -r apk_path icon_name <<< "$apk_info"
