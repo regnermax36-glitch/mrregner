@@ -1,0 +1,69 @@
+# maxregnerOS Settings Panel
+# Adds maxregnerOS category to main settings
+
+# In SettingsActivity or similar class
+# Add maxregnerOS preference category
+
+.method private addMaxregnerOSCategory(Landroidx/preference/PreferenceScreen;)V
+    .locals 6
+    
+    # Create maxregnerOS preference category
+    new-instance v0, Landroidx/preference/PreferenceCategory;
+    invoke-direct {v0, p0}, Landroidx/preference/PreferenceCategory;-><init>(Landroid/content/Context;)V
+    
+    const-string v1, "maxregneros_category"
+    invoke-virtual {v0, v1}, Landroidx/preference/Preference;->setKey(Ljava/lang/String;)V
+    
+    # Set title: "maxregnerOS"
+    const v1, 0x7f130000  # Replace with actual string resource ID
+    invoke-virtual {v0, v1}, Landroidx/preference/Preference;->setTitle(I)V
+    
+    # Add to preference screen
+    invoke-virtual {p1, v0}, Landroidx/preference/PreferenceGroup;->addPreference(Landroidx/preference/Preference;)Z
+    
+    # Add Liquid Reality preference
+    new-instance v1, Landroidx/preference/Preference;
+    invoke-direct {v1, p0}, Landroidx/preference/Preference;-><init>(Landroid/content/Context;)V
+    const-string v2, "liquid_reality"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setKey(Ljava/lang/String;)V
+    const v2, 0x7f130001  # "Liquid Reality"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setTitle(I)V
+    const v2, 0x7f130002  # "Reactive icons, no-grid workspace"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setSummary(I)V
+    invoke-virtual {v0, v1}, Landroidx/preference/PreferenceGroup;->addPreference(Landroidx/preference/Preference;)Z
+    
+    # Add Cortex preference
+    new-instance v1, Landroidx/preference/Preference;
+    invoke-direct {v1, p0}, Landroidx/preference/Preference;-><init>(Landroid/content/Context;)V
+    const-string v2, "cortex"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setKey(Ljava/lang/String;)V
+    const v2, 0x7f130003  # "Cortex Integration"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setTitle(I)V
+    const v2, 0x7f130004  # "AI-powered features"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setSummary(I)V
+    invoke-virtual {v0, v1}, Landroidx/preference/PreferenceGroup;->addPreference(Landroidx/preference/Preference;)Z
+    
+    # Add Ghost Protocol preference
+    new-instance v1, Landroidx/preference/Preference;
+    invoke-direct {v1, p0}, Landroidx/preference/Preference;-><init>(Landroid/content/Context;)V
+    const-string v2, "ghost_protocol"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setKey(Ljava/lang/String;)V
+    const v2, 0x7f130005  # "Ghost Protocol"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setTitle(I)V
+    const v2, 0x7f130006  # "Privacy features"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setSummary(I)V
+    invoke-virtual {v0, v1}, Landroidx/preference/PreferenceGroup;->addPreference(Landroidx/preference/Preference;)Z
+    
+    # Add Singularity preference
+    new-instance v1, Landroidx/preference/Preference;
+    invoke-direct {v1, p0}, Landroidx/preference/Preference;-><init>(Landroid/content/Context;)V
+    const-string v2, "singularity"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setKey(Ljava/lang/String;)V
+    const v2, 0x7f130007  # "Singularity"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setTitle(I)V
+    const v2, 0x7f130008  # "Universal control center"
+    invoke-virtual {v1, v2}, Landroidx/preference/Preference;->setSummary(I)V
+    invoke-virtual {v0, v1}, Landroidx/preference/PreferenceGroup;->addPreference(Landroidx/preference/Preference;)Z
+    
+    return-void
+.end method

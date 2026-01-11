@@ -1,0 +1,43 @@
+# Data Mirage - LocationManager Patch
+# Returns fake GPS location instead of real location
+
+# Patch LocationManager.getLastKnownLocation()
+.method public getLastKnownLocation(Ljava/lang/String;)Landroid/location/Location;
+    .locals 4
+
+    # Check if Data Mirage is enabled
+    const-string v0, "ro.maxregneros.ghost_protocol.fake_gps"
+    invoke-static {v0}, Landroid/os/SystemProperties;->get(Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v0
+    const-string v1, "true"
+    invoke-virtual {v0, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v0
+    
+    if-eqz v0, :fake_location
+    
+    # Original code path (return real location)
+    invoke-super {p0, p1}, Landroid/location/LocationManager;->getLastKnownLocation(Ljava/lang/String;)Landroid/location/Location;
+    move-result-object v0
+    return-object v0
+    
+    :fake_location
+    # Create fake location
+    new-instance v0, Landroid/location/Location;
+    invoke-direct {v0, p1}, Landroid/location/Location;-><init>(Ljava/lang/String;)V
+    
+    # Set fake coordinates (middle of ocean)
+    const-wide/16 v1, 0x0
+    invoke-virtual {v0, v1, v2}, Landroid/location/Location;->setLatitude(D)V
+    invoke-virtual {v0, v1, v2}, Landroid/location/Location;->setLongitude(D)V
+    
+    # Set fake accuracy
+    const/high16 v1, 0x42c80000    # 100.0f
+    invoke-virtual {v0, v1}, Landroid/location/Location;->setAccuracy(F)V
+    
+    # Set timestamp
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v1
+    invoke-virtual {v0, v1, v2}, Landroid/location/Location;->setTime(J)V
+    
+    return-object v0
+.end method
