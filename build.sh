@@ -130,10 +130,13 @@ for layer in "${layers[@]}"; do
     
     while IFS= read -r -d '' sh; do
         [[ "$sh" == *"$device.sh" ]] && continue
+        # Skip Magisk module scripts (they're for installation, not build)
+        [[ "$sh" == */magisk/* ]] && continue
         EXEC_SCRIPT "$sh" "$MARKER_FILE"
     done < <(find "$layer" -type f -name "*.sh" \
         ! -path "*.apk/*" \
         ! -path "*.jar/*" \
+        ! -path "*/magisk/*" \
         -print0 | sort -z)
 
     
