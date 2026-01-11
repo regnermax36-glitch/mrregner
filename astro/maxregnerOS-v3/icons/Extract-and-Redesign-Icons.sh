@@ -16,7 +16,10 @@ fi
 # Icon extraction directory
 EXTRACT_DIR="$WORKSPACE/icon_extraction"
 REDESIGN_DIR="$WORKSPACE/system/system/media/icons/maxregneros-v3"
-mkdir -p "$EXTRACT_DIR" "$REDESIGN_DIR/{system,apps,adaptive}"
+mkdir -p "$EXTRACT_DIR"
+mkdir -p "$REDESIGN_DIR/system"
+mkdir -p "$REDESIGN_DIR/apps"
+mkdir -p "$REDESIGN_DIR/adaptive"
 
 # Icon specifications
 ICON_SIZE=512
@@ -76,7 +79,12 @@ extract_icon_from_apk() {
     fi
     
     if [ -n "$found_icon" ] && [ -f "$found_icon" ]; then
-        cp "$found_icon" "$output_dir/${icon_name}_original.png"
+        # Ensure output directory exists
+        mkdir -p "$output_dir"
+        cp "$found_icon" "$output_dir/${icon_name}_original.png" 2>/dev/null || {
+            rm -rf "$temp_dir"
+            return 1
+        }
         echo "$found_icon"
         rm -rf "$temp_dir"
         return 0
@@ -93,11 +101,18 @@ redesign_icon() {
     local size="$ICON_SIZE"
     
     if [ ! -f "$original_icon" ]; then
+        LOG_WARN "Original icon not found: $original_icon"
         return 1
     fi
     
+    # Ensure output directory exists
+    mkdir -p "$(dirname "$output_icon")"
+    
     # Resize original to target size
-    convert "$original_icon" -resize ${size}x${size} "$EXTRACT_DIR/temp_resized.png" 2>/dev/null || return 1
+    convert "$original_icon" -resize ${size}x${size} "$EXTRACT_DIR/temp_resized.png" 2>/dev/null || {
+        LOG_WARN "Failed to resize icon: $original_icon"
+        return 1
+    }
     
     # Create rounded hexagon mask
     convert -size ${size}x${size} xc:transparent \
@@ -168,11 +183,17 @@ for apk_info in "${SYSTEM_APKS[@]}"; do
         
         if [ -n "$original_icon" ] && [ -f "$REDESIGN_DIR/system/${icon_name}_original.png" ]; then
             LOG_INFO "Redesigning: $icon_name"
-            redesign_icon "$REDESIGN_DIR/system/${icon_name}_original.png" "$REDESIGN_DIR/system/${icon_name}.png"
-            
-            if [ -f "$REDESIGN_DIR/system/${icon_name}.png" ]; then
-                LOG_INFO "✓ Created: $icon_name.png"
+            if redesign_icon "$REDESIGN_DIR/system/${icon_name}_original.png" "$REDESIGN_DIR/system/${icon_name}.png"; then
+                if [ -f "$REDESIGN_DIR/system/${icon_name}.png" ]; then
+                    LOG_INFO "✓ Created: $icon_name.png"
+                else
+                    LOG_WARN "Failed to create redesigned icon: $icon_name"
+                fi
+            else
+                LOG_WARN "Failed to redesign icon: $icon_name"
             fi
+        else
+            LOG_WARN "No icon extracted for: $icon_name"
         fi
     fi
 done
@@ -195,13 +216,15 @@ for apk_info in "${SYSTEM_APKS[@]}"; do
         background=$(find "$temp_dir/res" -name "*ic_launcher_background*.png" 2>/dev/null | head -1)
         
         if [ -n "$foreground" ] && [ -f "$foreground" ]; then
-            cp "$foreground" "$REDESIGN_DIR/adaptive/${icon_name}-foreground.png"
-            redesign_icon "$foreground" "$REDESIGN_DIR/adaptive/${icon_name}-foreground-redesigned.png"
+            mkdir -p "$REDESIGN_DIR/adaptive"
+            cp "$foreground" "$REDESIGN_DIR/adaptive/${icon_name}-foreground.png" 2>/dev/null || true
+            redesign_icon "$foreground" "$REDESIGN_DIR/adaptive/${icon_name}-foreground-redesigned.png" || true
         fi
         
         if [ -n "$background" ] && [ -f "$background" ]; then
-            cp "$background" "$REDESIGN_DIR/adaptive/${icon_name}-background.png"
-            # Background doesn't need redesign, just use it
+            mkdir -p "$REDESIGN_DIR/adaptive"
+            cp "$background" "$REDESIGN_DIR/adaptive/${icon_name}-background.png" 2>/dev/null || true
+            # Background doesn't need redesign, just resize it
             convert "$background" -resize ${ICON_SIZE}x${ICON_SIZE} "$REDESIGN_DIR/adaptive/${icon_name}-background-redesigned.png" 2>/dev/null || true
         fi
         

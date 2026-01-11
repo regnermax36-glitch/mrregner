@@ -4,10 +4,16 @@ FF "SETTINGS_CONFIG_BRAND_NAME" "$MODEL_NAME"
 # Game Driver for Snapdragon 8 Gen 2
 ADD_FROM_FW "stock" "system" "priv-app/GameDriver-SM8550"
 
-# Z Flip5 specific system apps
-ADD_FROM_FW "stock" "system" "priv-app/CoverScreenService" 2>/dev/null || true
-ADD_FROM_FW "stock" "system" "priv-app/FlexModePanelService" 2>/dev/null || true
-ADD_FROM_FW "stock" "system" "app/CoverScreen" 2>/dev/null || true
+# Z Flip5 specific system apps (only if they exist)
+if EXISTS "stock" "system" "priv-app/CoverScreenService"; then
+    ADD_FROM_FW "stock" "system" "priv-app/CoverScreenService" 2>/dev/null || true
+fi
+if EXISTS "stock" "system" "priv-app/FlexModePanelService"; then
+    ADD_FROM_FW "stock" "system" "priv-app/FlexModePanelService" 2>/dev/null || true
+fi
+if EXISTS "stock" "system" "app/CoverScreen"; then
+    ADD_FROM_FW "stock" "system" "app/CoverScreen" 2>/dev/null || true
+fi
 
 # Enable Z Flip5 specific features
 FF "COMMON_SUPPORT_FOLDABLE_DEVICE" "TRUE"

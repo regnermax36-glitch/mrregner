@@ -30,10 +30,21 @@ for apk_path in "${APK_LIST[@]}"; do
     LOG_BEGIN "Processing $apk_name"
     
     # Decompile APK
-    java -jar "$BIN/apktool/apktool.jar" d "$apk_path" -o "$extract_path" -f 2>/dev/null || {
-        LOG_WARN "Failed to decompile $apk_name"
-        continue
-    }
+    LOG_INFO "Decompiling $apk_name..."
+    if ! java -jar "$BIN/apktool/apktool.jar" d "$apk_path" -o "$extract_path" -f > "$EXTRACT_DIR/${apk_name}_decompile.log" 2>&1; then
+        LOG_WARN "Failed to decompile $apk_name (check log: $EXTRACT_DIR/${apk_name}_decompile.log)"
+        # Try with framework if available
+        if [ -f "$WORKSPACE/system/system/framework/framework-res.apk" ]; then
+            LOG_INFO "Trying with framework-res.apk..."
+            java -jar "$BIN/apktool/apktool.jar" if "$WORKSPACE/system/system/framework/framework-res.apk" >/dev/null 2>&1 || true
+            java -jar "$BIN/apktool/apktool.jar" d "$apk_path" -o "$extract_path" -f > "$EXTRACT_DIR/${apk_name}_decompile2.log" 2>&1 || {
+                LOG_WARN "Still failed to decompile $apk_name, skipping"
+                continue
+            }
+        else
+            continue
+        fi
+    fi
     
     # Patch based on APK type
     case "$apk_name" in
@@ -80,11 +91,17 @@ for apk_path in "${APK_LIST[@]}"; do
     
     # Recompile APK
     LOG_BEGIN "Recompiling $apk_name"
-    java -jar "$BIN/apktool/apktool.jar" b "$extract_path" -o "$apk_path.new" 2>/dev/null || {
-        LOG_WARN "Failed to recompile $apk_name"
+    if ! java -jar "$BIN/apktool/apktool.jar" b "$extract_path" -o "$apk_path.new" > "$EXTRACT_DIR/${apk_name}_recompile.log" 2>&1; then
+        LOG_WARN "Failed to recompile $apk_name (check log: $EXTRACT_DIR/${apk_name}_recompile.log)"
         rm -rf "$extract_path"
         continue
-    }
+    fi
+    
+    if [ ! -f "$apk_path.new" ]; then
+        LOG_WARN "Recompiled APK not found: $apk_path.new"
+        rm -rf "$extract_path"
+        continue
+    fi
     
     # Sign APK (if signapk available)
     if [ -f "$BIN/signapk/signapk.jar" ]; then
